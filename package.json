@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
@@ -12,10 +13,13 @@
   "dependencies": {
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
+    "express-rate-limit": "^5.5.1",
     "helmet": "^4.6.0",
     "hpp": "^0.2.3",
     "morgan": "^1.10.0",
-    "sequelize": "^6.12.0-alpha.1",
-    "xss-clean": "^0.1.1"
+    "sequelize": "^6.12.0-alpha.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
   }
 }
