@@ -28,17 +28,26 @@ app.use("/api", limiter);
 
 //Body parser, reading data from body into req.body
 app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+// app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-app.use("/auth", authRouter);
+app.use((req, res, next) => {
+  // req.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
+app.use("/api/auth", authRouter);
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.json("hello world");
 });
 
 app.use((err, req, res, next) => {
-  console.log(err.stack);
-  res.status(500).json("Something broke");
+  console.log("ERR.STACK: ", err.stack);
+  res.status(err.statusCode).send({ err: err, message: err.message });
 });
 
 module.exports = app;
