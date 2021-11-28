@@ -6,8 +6,12 @@ const dotenv = require("dotenv").config({ path: "./config.env" });
 const helmet = require("helmet");
 
 const app = express();
+const cors = require("cors");
 
 const authRouter = require("./routes/router");
+
+//enable cors
+app.use(cors());
 
 //1) Global Middleware
 //Set Security Http Headers

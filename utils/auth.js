@@ -4,6 +4,7 @@ const catchAsync = require("./catchAsync");
 
 const Client = require("./../models/UserModel");
 const AppError = require("./AppError");
+const app = require("../app");
 
 exports.checkDuplicate = async (next, email) => {
   await Client.findAll({
@@ -12,15 +13,19 @@ exports.checkDuplicate = async (next, email) => {
     },
   }).then((res) => {
     if (res.length > 0) {
-      next(new AppError("RegistrationError: Email already exists", 404));
-    }
+      return next(new AppError("RegistrationError: Email already exists", 404));
+    } else return true;
   });
 };
 
 exports.checkPassword = (next, password, confirmPassword) => {
   let checker = true;
+  let error = null;
+  if (password.length < 8)
+    return next(new AppError("Passwords should be at least 8 characters", 422));
   if (password !== confirmPassword)
-    next(new AppError("RegistrationError: Passwords do not match", 404));
+    return next(new AppError("RegistrationError: Passwords do not match", 422));
+  return true;
 };
 
 exports.encryptPassword = async (next, password) => {
@@ -39,4 +44,5 @@ exports.encryptPassword = async (next, password) => {
 exports.comparePassword = async (next, password, hashedPassword) => {
   let x = await bcrypt.compare(password, hashedPassword);
   if (x === false) return next(new AppError("Passwords do not match"), 404);
+  else return true;
 };

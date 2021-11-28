@@ -6,7 +6,7 @@ const Client = require("./models/UserModel");
 const port = process.env.PORT || 8080;
 
 sequelize
-  .sync({ force: true })
+  .sync()
   .then(() => {
     console.log("SYNC SUCCESSFUL");
     app.listen(port, () => {
