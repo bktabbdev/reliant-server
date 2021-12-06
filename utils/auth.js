@@ -1,10 +1,45 @@
 const bcrypt = require("bcrypt");
 const isEmail = require("validator/lib/isEmail");
 const catchAsync = require("./catchAsync");
+const jwt = require("jsonwebtoken");
 
 const Client = require("./../models/UserModel");
 const AppError = require("./AppError");
 const app = require("../app");
+
+const signToken = ({ ...data }) => {
+  const { id } = data[0].dataValues;
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: Math.floor(Date.now() / 1000) + 60 * 60,
+  });
+};
+
+exports.createSendToken = (user, statusCode, res) => {
+  const token = signToken(user);
+  const { firstName, lastName, email, id } = user[0].dataValues;
+  const cookieOptions = {
+    // secure: true,
+    // httpOnly: true,
+    // sameSite: "lax",
+  };
+
+  if (process.env.NODE_ENV === "production") {
+    cookieOptions.secure = true;
+    res.cookie("jwt", token);
+  }
+  if (process.env.NODE_ENV === "development") {
+    res.status(statusCode).cookie("jwt", token, cookieOptions).json({
+      status: "success",
+      token: token,
+      user: {
+        firstName,
+        lastName,
+        id,
+        email,
+      },
+    });
+  }
+};
 
 exports.checkDuplicate = async (next, email) => {
   await Client.findAll({
@@ -42,7 +77,12 @@ exports.encryptPassword = async (next, password) => {
 };
 
 exports.comparePassword = async (next, password, hashedPassword) => {
-  let x = await bcrypt.compare(password, hashedPassword);
-  if (x === false) return next(new AppError("Passwords do not match"), 404);
-  else return true;
+  try {
+    let x = await bcrypt.compare(password, hashedPassword);
+
+    if (!x) return next(new AppError("Wrong Password", 404));
+    else return true;
+  } catch (err) {
+    console.log(err);
+  }
 };

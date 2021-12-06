@@ -1,12 +1,11 @@
 const app = require("./app");
-const dotenv = require("dotenv").config({ path: "./config.env" });
 const sequelize = require("./db/sequelize");
-const Client = require("./models/UserModel");
 
 const port = process.env.PORT || 8080;
 
 sequelize
   .sync()
+  // .sync({ force: true })
   .then(() => {
     console.log("SYNC SUCCESSFUL");
     app.listen(port, () => {

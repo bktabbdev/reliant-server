@@ -1,11 +1,10 @@
 const catchAsync = require("./../utils/catchAsync");
-const pool = require("./../db/client-config");
 const Client = require("./../models/UserModel");
 const AppError = require("./../utils/AppError");
 const authApi = require("./../utils/auth");
-const { userInfo } = require("os");
 
 exports.loginPost = catchAsync(async (req, res, next) => {
+  console.log("login");
   const { email, password } = req.body.formData;
   try {
     if (email === "") return next(new AppError("Please enter your email", 422));
@@ -21,21 +20,18 @@ exports.loginPost = catchAsync(async (req, res, next) => {
       return next(new AppError("Email not registered", 404));
     const hashedPassword = user[0].toJSON().password;
 
-    let validatedPassword = false;
-    validatedPassword = await authApi.comparePassword(
+    let validatedPassword = await authApi.comparePassword(
       next,
       password,
       hashedPassword
     );
 
-    if (validatedPassword)
-      res.status(201).json({
-        message: "Successfully Logged In! Redirecting...",
-        user: user[0].email,
-        role: user[0].role,
-      });
+    if (validatedPassword) {
+      authApi.createSendToken(user, 200, res);
+    }
   } catch (err) {
-    next(new AppError(`${err.message} `, 404));
+    console.log(err);
+    next(new AppError(`LOGINPOSTERROR: ${err.message} `, 500));
   }
 });
 
