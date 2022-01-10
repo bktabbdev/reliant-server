@@ -1,8 +1,9 @@
 "use strict";
 
-const { Model, Datatypes, DataTypes, UUIDV4 } = require("sequelize");
+const { Model, Datatypes, DataTypes } = require("sequelize");
 const sequelize = require("./../db/sequelize");
 const Client = require("./UserModel");
+const Employee = require("./EmployeeModel");
 
 const Company = sequelize.define("company", {
   companyId: {
@@ -19,8 +20,15 @@ const Company = sequelize.define("company", {
   numOfEmployees: {
     type: DataTypes.INTEGER,
   },
+  type: {
+    type: DataTypes.ENUM("Industrial", "Agricultural"),
+    allowNull: false,
+  },
 });
 
-Company.hasMany(Client);
+Company.hasOne(Client, { foreignKey: "companyId" });
+Company.hasMany(Employee, {
+  foreignKey: "companyId",
+});
 
 module.exports = Company;

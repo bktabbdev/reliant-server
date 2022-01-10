@@ -14,16 +14,6 @@ sequelize
   })
   .catch((err) => console.log(err.message));
 
-//Test Connection
-// (async () => {
-//   try {
-//     sequelize.authenticate();
-//     console.log("authenticated");
-//   } catch (err) {
-//     console.log(err);
-//   }
-// })();
-
 // const server = app.listen(port, () => {
 //   console.log(`App listening at http://localhost:${port}`);
 // });
