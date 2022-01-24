@@ -1,7 +1,7 @@
-const catchAsync = require("./../utils/catchAsync");
-const Client = require("./../models/UserModel");
-const AppError = require("./../utils/AppError");
-const authApi = require("./../utils/auth");
+const catchAsync = require("../../utils/catchAsync");
+const Client = require("../../models/UserModel");
+const AppError = require("../../utils/AppError");
+const authApi = require("../../utils/auth");
 
 exports.loginPost = catchAsync(async (req, res, next) => {
   console.log("login");

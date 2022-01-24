@@ -1,34 +1,46 @@
 "use strict";
 
-const { Model, Datatypes, DataTypes } = require("sequelize");
+const { Model, DataTypes, UUIDV4 } = require("sequelize");
 const sequelize = require("./../db/sequelize");
 const Client = require("./UserModel");
 const Employee = require("./EmployeeModel");
+const Training = require("./TrainingModel");
 
 const Company = sequelize.define("company", {
-  companyId: {
-    type: DataTypes.BIGINT,
-    autoIncrement: true,
+  id: {
+    type: DataTypes.INTEGER,
     allowNull: false,
     primaryKey: true,
+    autoIncrement: true,
+  },
+  uuid: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    defaultValue: UUIDV4,
   },
   companyName: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
   },
-  numOfEmployees: {
-    type: DataTypes.INTEGER,
-  },
-  type: {
-    type: DataTypes.ENUM("Industrial", "Agricultural"),
-    allowNull: false,
-  },
 });
 
-Company.hasOne(Client, { foreignKey: "companyId" });
 Company.hasMany(Employee, {
-  foreignKey: "companyId",
+  foreignKey: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    name: "companyId",
+  },
 });
+Employee.belongsTo(Company);
+
+Company.hasMany(Training, {
+  foreignKey: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    name: "companyId",
+  },
+});
+Training.belongsTo(Company);
 
 module.exports = Company;

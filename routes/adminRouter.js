@@ -1,5 +1,6 @@
 const express = require("express");
-const adminController = require("../controllers/adminController");
+const adminController = require("../controllers/admin/adminController");
+const upload = require("./../multer.config");
 
 const adminRouter = express.Router();
 
@@ -15,16 +16,59 @@ adminRouter.get(
   adminController.getCompany
 );
 
-adminRouter.patch("/updateCompany/:id", adminController.updateCompany);
+adminRouter.patch(
+  "/update_company/:id",
+  adminController.verify,
+  adminController.updateCompany
+);
 
-adminRouter.post("/addCompany", adminController.addCompany);
+adminRouter.post(
+  "/add_company",
+  adminController.verify,
+  adminController.addCompany
+);
 
-adminRouter.delete("/deleteCompany/:id", adminController.deleteCompany);
+adminRouter.delete(
+  "/delete_company/:id",
+  adminController.verify,
+  adminController.deleteCompany
+);
 
-adminRouter.post("/addEmployee", adminController.addEmployees);
+adminRouter.post(
+  "/add_employee",
+  upload.none(),
+  adminController.verify,
+  adminController.addEmployees
+);
 
-adminRouter.get("/employees", adminController.getEmployees);
+adminRouter.get(
+  "/employees",
+  adminController.verify,
+  adminController.getEmployees
+);
 
-adminRouter.patch("/updateEmployees", adminController.updateEmployees);
+adminRouter.get(
+  "/employee/:id",
+  adminController.verify,
+  adminController.getEmployee
+);
+
+adminRouter.patch(
+  "/update_employee/:id",
+  adminController.verify,
+  adminController.updateEmployee
+);
+
+adminRouter.patch(
+  "/update_employees",
+  adminController.verify,
+  adminController.updateEmployees
+);
+
+adminRouter.delete(
+  "/delete_employee",
+  adminController.verify,
+  adminController.deleteEmployee
+);
 
 module.exports = adminRouter;

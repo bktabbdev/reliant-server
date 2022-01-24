@@ -13,12 +13,10 @@ const Client = sequelize.define("client", {
   firstName: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: "first_name",
   },
   lastName: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: "last_name",
   },
   email: {
     type: DataTypes.STRING,
