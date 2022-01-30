@@ -2,6 +2,7 @@ const AppError = require("../../utils/AppError");
 const catchAsync = require("../../utils/catchAsync");
 const Company = require("../../models/CompanyModel");
 const Employee = require("../../models/EmployeeModel");
+const Training = require("./../../models/TrainingModel");
 const sequelize = require("../../db/sequelize");
 
 exports.verify = async (req, res, next) => {
@@ -100,13 +101,12 @@ exports.deleteCompany = async (req, res, next) => {
 
 exports.updateCompany = async (req, res, next) => {
   console.log("UPDATE COMPANY");
-  const { id, companyName, type } = req.body;
+  const { uuid, companyName } = req.body;
   console.log("companySpecs", req.body);
 
   Company.update(
     {
       companyName: companyName,
-      type: type,
     },
     {
       where: {
@@ -206,28 +206,31 @@ exports.addEmployees = async (req, res, next) => {
   }
 };
 
-exports.updateEmployees = async (req, res, next) => {
+exports.conductTraining = async (req, res, next) => {
   console.log("UPDATE EMPLOYEES");
-  const { date, employees, trainings, compUuid } = req.body[0];
-  console.log("req.body: ", req.body);
+  const data = JSON.parse(req.body.training);
+  const file = req.file;
+  console.log("file: ", file);
+  console.log("data: ", data);
+  const { date, employees, trainings, compUuid } = data;
   if (date === null || date === undefined)
     return next(new AppError("Date did not fit the specified formate", 422));
+  let trainingArray = ["id", "uuid", "lastName"];
   let updateObj = {};
   trainings.forEach((training) => {
     updateObj = { ...updateObj, [training]: date };
+    trainingArray.push(training);
   });
-  console.log("updateObj: ", updateObj);
+  let company = await Company.findAll({
+    where: {
+      uuid: compUuid,
+    },
+    attributes: ["id"],
+  });
+  const compId = company[0].dataValues.id;
+  // console.log("updateObj: ", updateObj);
+  console.log("trainingArray: ", trainingArray);
   try {
-    let emps = await Employee.findAll({
-      where: {
-        uuid: employees,
-      },
-    });
-    console.log("emps: ", emps);
-    emps.forEach((emp) => {
-      emp.update(date, { fields: trainings });
-    });
-
     Employee.update(updateObj, {
       where: {
         uuid: employees,
@@ -235,6 +238,14 @@ exports.updateEmployees = async (req, res, next) => {
       returning: true,
     })
       .then((resp) => {
+        console.log("companyId: ", compId);
+        Training.create({
+          trainingDate: date,
+          trainingDoc: file,
+          companyId: compId,
+        })
+          .then((res) => console.log(res))
+          .catch((err) => console.log(err));
         console.log("resp: ", resp[0]);
         resp[0] > 0
           ? res.status(204).send()
@@ -243,7 +254,12 @@ exports.updateEmployees = async (req, res, next) => {
       .catch((err) => console.log(err));
   } catch (err) {
     console.log(err);
-    return next(new AppError("Backend Update Failure", 500));
+    return next(
+      new AppError(
+        "Backend Update Failure. Please Contact Administrator if Problem Persists.",
+        500
+      )
+    );
   }
 };
 
@@ -264,4 +280,21 @@ exports.deleteEmployee = async (req, res, next) => {
       console.log(err);
       res.status(400).send();
     });
+};
+
+exports.getTraining = async (req, res, next) => {
+  console.log("getTraining");
+  let { uuid } = req.params;
+  console.log("uuid: ", uuid);
+  let training = await Training.findAll({
+    where: {
+      uuid: uuid,
+    },
+    attributes: { exclude: ["id"] },
+  });
+  console.log(training[0].dataValues);
+  if (training[0] !== undefined || training[0] !== null)
+    // res.status(200).send(training[0].dataValues.trainingDoc);
+    res.send();
+  else return next(new AppError("No Training Found", 404));
 };

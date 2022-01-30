@@ -60,15 +60,22 @@ adminRouter.patch(
 );
 
 adminRouter.patch(
-  "/update_employees",
+  "/conduct_training",
+  upload.single("conduct_training_file"),
   adminController.verify,
-  adminController.updateEmployees
+  adminController.conductTraining
 );
 
 adminRouter.delete(
   "/delete_employee",
   adminController.verify,
   adminController.deleteEmployee
+);
+
+adminRouter.get(
+  "/get_training/:uuid",
+  adminController.verify,
+  adminController.getTraining
 );
 
 module.exports = adminRouter;
