@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 const AppError = require("../../utils/AppError");
 const catchAsync = require("../../utils/catchAsync");
 const Company = require("../../models/CompanyModel");
@@ -210,56 +213,59 @@ exports.conductTraining = async (req, res, next) => {
   console.log("UPDATE EMPLOYEES");
   const data = JSON.parse(req.body.training);
   const file = req.file;
+
   console.log("file: ", file);
+
+  fs.unlink(`./public/uploads/trainings/${file.filename}`, (err) => {
+    if (err) throw err;
+    console.log("UNLINK");
+  });
+
+  if (file.size > 4194303) {
+    return next(new AppError("PDF must be less than 4MB", 401));
+  }
   console.log("data: ", data);
-  const { date, employees, trainings, compUuid } = data;
+  const { date, employees, trainings, company } = data;
+
+  let { uuid } = company;
+
   if (date === null || date === undefined)
-    return next(new AppError("Date did not fit the specified formate", 422));
+    return next(new AppError("Date did not fit the specified format", 422));
   let trainingArray = ["id", "uuid", "lastName"];
   let updateObj = {};
   trainings.forEach((training) => {
     updateObj = { ...updateObj, [training]: date };
     trainingArray.push(training);
   });
-  let company = await Company.findAll({
-    where: {
-      uuid: compUuid,
-    },
-    attributes: ["id"],
-  });
-  const compId = company[0].dataValues.id;
-  // console.log("updateObj: ", updateObj);
-  console.log("trainingArray: ", trainingArray);
   try {
-    Employee.update(updateObj, {
+    //Get company Id
+    let company = await Company.findAll({
+      where: {
+        uuid: uuid,
+      },
+      attributes: ["id"],
+    });
+    const compId = company[0].dataValues.id;
+
+    //Update Employees
+    let empUpd = await Employee.update(updateObj, {
       where: {
         uuid: employees,
       },
       returning: true,
-    })
-      .then((resp) => {
-        console.log("companyId: ", compId);
-        Training.create({
-          trainingDate: date,
-          trainingDoc: file,
-          companyId: compId,
-        })
-          .then((res) => console.log(res))
-          .catch((err) => console.log(err));
-        console.log("resp: ", resp[0]);
-        resp[0] > 0
-          ? res.status(204).send()
-          : res.status(422).send("Not Found");
-      })
-      .catch((err) => console.log(err));
+    });
+
+    let training = await Training.create({
+      trainingDate: date,
+      trainingDoc: file,
+      companyId: compId,
+    });
+    let num = training.dataValues.id;
+
+    if (training) res.status(204).send();
   } catch (err) {
     console.log(err);
-    return next(
-      new AppError(
-        "Backend Update Failure. Please Contact Administrator if Problem Persists.",
-        500
-      )
-    );
+    res.status(422).send();
   }
 };
 

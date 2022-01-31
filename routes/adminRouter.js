@@ -61,7 +61,7 @@ adminRouter.patch(
 
 adminRouter.patch(
   "/conduct_training",
-  upload.single("conduct_training_file"),
+  upload.single("training_file"),
   adminController.verify,
   adminController.conductTraining
 );

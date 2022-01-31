@@ -56,6 +56,7 @@ app.get("/api", (req, res) => {
 
 app.use((err, req, res, next) => {
   console.log("ERR.STACK: ", err.stack);
+  console.log("err: ", err);
   res.status(err.statusCode).send({ err: err, message: err.message });
 });
 
