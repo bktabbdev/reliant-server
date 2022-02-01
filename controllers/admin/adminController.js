@@ -7,6 +7,33 @@ const Company = require("../../models/CompanyModel");
 const Employee = require("../../models/EmployeeModel");
 const Training = require("./../../models/TrainingModel");
 const sequelize = require("../../db/sequelize");
+const app = require("../../app");
+
+const utils = require("./../../utils/util.string");
+
+const uploadFile = (nameObject, filePath) => {
+  //recreate path string for storage in db - return
+  if (filePath) {
+    const { name, type, num, ext } = nameObject;
+    const newPath =
+      "./public/uploads/trainings/" +
+      utils.newTrainingPath(name, type, num, ext);
+    console.log(newPath);
+    //update pdf name in trainings folder
+    fs.rename(filePath, newPath, (err) => {
+      if (err) throw err;
+      console.log("fsRename conduct_training");
+    });
+    return newPath;
+  } else {
+    //if filePath is null (no file) unlink file - redundant
+    fs.unlink(filePath, (err) => {
+      if (err) throw err;
+      console.log("UNLINK");
+    });
+    return filePath;
+  }
+};
 
 exports.verify = async (req, res, next) => {
   next();
@@ -209,41 +236,49 @@ exports.addEmployees = async (req, res, next) => {
   }
 };
 
+/* 
+  ToDo - move file.size validation to multer
+*/
 exports.conductTraining = async (req, res, next) => {
   console.log("UPDATE EMPLOYEES");
+
+  const nameStr = JSON.parse(req.body.training).company.companyName.trim(); // to be used in file naming
   const data = JSON.parse(req.body.training);
+  const { date, employees, trainings, company } = data;
   const file = req.file;
 
-  console.log("file: ", file);
-
-  fs.unlink(`./public/uploads/trainings/${file.filename}`, (err) => {
-    if (err) throw err;
-    console.log("UNLINK");
-  });
+  const filePath = file ? `./public/uploads/trainings/${file.filename}` : null; // to be used if validation fails (remove file from system)
 
   if (file.size > 4194303) {
     return next(new AppError("PDF must be less than 4MB", 401));
   }
   console.log("data: ", data);
-  const { date, employees, trainings, company } = data;
 
   let { uuid } = company;
 
+  // Basic Validation - Assess date
   if (date === null || date === undefined)
     return next(new AppError("Date did not fit the specified format", 422));
   let trainingArray = ["id", "uuid", "lastName"];
+
+  //Assessing which trainings to update
   let updateObj = {};
   trainings.forEach((training) => {
     updateObj = { ...updateObj, [training]: date };
     trainingArray.push(training);
   });
+
   try {
-    //Get company Id
+    //Get num Trainings
+    const trainingPromise = await Training.findAndCountAll();
+    const num = trainingPromise.count;
+
+    // Get company Id
     let company = await Company.findAll({
       where: {
         uuid: uuid,
       },
-      attributes: ["id"],
+      attributes: ["id", "companyName"],
     });
     const compId = company[0].dataValues.id;
 
@@ -255,15 +290,36 @@ exports.conductTraining = async (req, res, next) => {
       returning: true,
     });
 
-    let training = await Training.create({
+    // Prepare training path
+    const nameObj = {
+      name: company[0].dataValues.companyName.trim(),
+      type: "training",
+      num: num + 1,
+      ext: ".pdf",
+    };
+    const newPath = uploadFile(nameObj, filePath);
+
+    //Create training with updated file path
+    let result = Training.create({
       trainingDate: date,
-      trainingDoc: file,
+      trainingDoc: newPath,
       companyId: compId,
     });
-    let num = training.dataValues.id;
 
-    if (training) res.status(204).send();
+    if (result) res.status(200).send();
+
+    //Remove file installed in Multer
+    // fs.unlink(filePath, (err) => {
+    //   if (err) throw err;
+    //   console.log("UNLINK");
+    // });
+    // return next(new AppError("File Upload Error", 400));
   } catch (err) {
+    console.log("ERR");
+    fs.unlink(filePath, (error) => {
+      if (error) throw error;
+      console.log("UNLINK");
+    });
     console.log(err);
     res.status(422).send();
   }

@@ -9,7 +9,7 @@ const Training = sequelize.define(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     uuid: { type: DataTypes.UUID, allowNull: false, defaultValue: UUIDV4 },
     trainingDate: { type: DataTypes.DATE, allowNull: false },
-    trainingDoc: { type: DataTypes.BLOB },
+    trainingDoc: { type: DataTypes.STRING },
   }
   // { timestamps: false }
 );
