@@ -2,7 +2,7 @@
 const express = require("express");
 
 //Local Imports
-const authController = require("../controllers/auth/authController");
+const authController = require("../controllers/authController");
 
 //Declaring Instance of Router
 const authRouter = express.Router();

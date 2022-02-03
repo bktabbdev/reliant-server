@@ -1,15 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 
-const AppError = require("../../utils/AppError");
-const catchAsync = require("../../utils/catchAsync");
-const Company = require("../../models/CompanyModel");
-const Employee = require("../../models/EmployeeModel");
-const Training = require("./../../models/TrainingModel");
-const sequelize = require("../../db/sequelize");
-const app = require("../../app");
+const AppError = require("../utils/AppError");
+const catchAsync = require("./../utils/catchAsync");
+const Company = require("../models/CompanyModel");
+const Employee = require("../models/EmployeeModel");
+const Training = require("../models/TrainingModel");
+const sequelize = require("../db/sequelize");
+const app = require("../app");
 
-const utils = require("./../../utils/util.string");
+const utils = require("../utils/util.string");
 
 const uploadFile = (nameObject, filePath) => {
   //recreate path string for storage in db - return
@@ -237,7 +237,7 @@ exports.addEmployees = async (req, res, next) => {
 };
 
 /* 
-  ToDo - move file.size validation to multer
+
 */
 exports.conductTraining = async (req, res, next) => {
   console.log("UPDATE EMPLOYEES");
@@ -300,7 +300,7 @@ exports.conductTraining = async (req, res, next) => {
     const newPath = uploadFile(nameObj, filePath);
 
     //Create training with updated file path
-    let result = Training.create({
+    let result = await Training.create({
       trainingDate: date,
       trainingDoc: newPath,
       companyId: compId,
@@ -316,6 +316,7 @@ exports.conductTraining = async (req, res, next) => {
     // return next(new AppError("File Upload Error", 400));
   } catch (err) {
     console.log("ERR");
+    // Remove file installed in Multer in event of error
     fs.unlink(filePath, (error) => {
       if (error) throw error;
       console.log("UNLINK");

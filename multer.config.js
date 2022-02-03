@@ -8,10 +8,7 @@ const multerStorage = multer.diskStorage({
     cb(null, "./public/uploads/trainings");
   },
   filename: async (req, file, cb) => {
-    const nameStr = JSON.parse(req.body.training).company.companyName.trim();
-    const name = utility.slugifyCompName(nameStr);
-    const uniqueSuffix = ".pdf";
-    cb(null, name + uniqueSuffix);
+    cb(null, "tempName.pdf");
   },
 });
 

@@ -43,4 +43,9 @@ Company.hasMany(Training, {
 });
 Training.belongsTo(Company);
 
+// Employee.hasMany(Training);
+// Training.belongsToMany(Employee, {
+//   through: "employeeTrainings",
+// });
+
 module.exports = Company;
