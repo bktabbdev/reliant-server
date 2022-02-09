@@ -78,4 +78,10 @@ adminRouter.get(
   adminController.getTraining
 );
 
+adminRouter.get(
+  "/get_trainings",
+  adminController.verify,
+  adminController.getTrainings
+);
+
 module.exports = adminRouter;

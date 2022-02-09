@@ -44,7 +44,7 @@ exports.getCompanies = async (req, res, next) => {
   try {
     let companies = await Company.findAll({
       order: [["companyName", "ASC"]],
-      attributes: { exclude: ["id"] },
+      attributes: { exclude: ["id", "updatedAt", "createdAt"] },
     });
     // console.log(companies);
     res.status(201).json(companies);
@@ -249,10 +249,10 @@ exports.conductTraining = async (req, res, next) => {
 
   const filePath = file ? `./public/uploads/trainings/${file.filename}` : null; // to be used if validation fails (remove file from system)
 
-  if (file.size > 4194303) {
-    return next(new AppError("PDF must be less than 4MB", 401));
-  }
-  console.log("data: ", data);
+  // if (file.size > 4194303) {
+  //   return next(new AppError("PDF must be less than 4MB", 401));
+  // }
+  // console.log("data: ", data);
 
   let { uuid } = company;
 
@@ -299,10 +299,12 @@ exports.conductTraining = async (req, res, next) => {
     };
     const newPath = uploadFile(nameObj, filePath);
 
+    console.log("date: ", date);
+
     //Create training with updated file path
     let result = await Training.create({
       trainingDate: date,
-      trainingDoc: newPath,
+      docPath: newPath,
       companyId: compId,
     });
 
@@ -318,7 +320,6 @@ exports.conductTraining = async (req, res, next) => {
     console.log("ERR");
     // Remove file installed in Multer in event of error
     fs.unlink(filePath, (error) => {
-      if (error) throw error;
       console.log("UNLINK");
     });
     console.log(err);
@@ -347,17 +348,107 @@ exports.deleteEmployee = async (req, res, next) => {
 
 exports.getTraining = async (req, res, next) => {
   console.log("getTraining");
+
+  // get uuid to select training
   let { uuid } = req.params;
   console.log("uuid: ", uuid);
+
+  // perform findAll returning training and docPath
   let training = await Training.findAll({
     where: {
       uuid: uuid,
     },
-    attributes: { exclude: ["id"] },
+    attributes: { exclude: ["id", "createdAt", "updatedAt"] },
+    raw: true,
   });
-  console.log(training[0].dataValues);
-  if (training[0] !== undefined || training[0] !== null)
-    // res.status(200).send(training[0].dataValues.trainingDoc);
-    res.send();
-  else return next(new AppError("No Training Found", 404));
+
+  if (training.length === 0)
+    return next(
+      new AppError("No Trainings known to Exist with UUID Type", 404)
+    );
+
+  console.log("training[0]: ", training);
+  const filePath = training[0].docPath;
+  // console.log("filePath: ", filePath);
+
+  // async fs.open to assess if file exists
+  fs.open(filePath, "r", (err, fd) => {
+    // error quits furthering logic
+    if (err) throw err;
+    const stat = fs.statSync(filePath); // get stat for header
+    const file = fs.createReadStream(filePath); // file.pip(res)
+    const baseName = path.basename(filePath); // fileName
+    // console.log("basename: ", baseName);
+
+    console.log("fd: ", fd);
+    // console.log("stat: ", stat);
+
+    // console.log("file: ", file);
+    // console.log("stat: ", stat);
+    if (fd)
+      fs.close(fd, (erro) => {
+        if (erro) console.log("erro");
+
+        // preparing for sending pdf
+        res.setHeader("Content-Length", stat.size);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "inline; filename=" + baseName);
+        file.pipe(res);
+        // res.end(file);
+        // res.send();
+      });
+  });
+
+  // const file = fs.crea;
+
+  // (err, stats) => {
+  //   if (err) console.log(err);
+  //   console.log("stats: ", stats);
+  //   console.log("isFile: ", stats.isFile());
+  //   console.log("isDirectory: ", stats.isDirectory());
+  //   return stats;
+  // });
+
+  // create a readStream
+  // const file = fs.createReadStream(filePath);
+  // const stat = fs.stat(filePath, (err, stat) => {
+  //   if (err) console.log("ERROR");
+  // });
+  // console.log("file: ", file);
+
+  // console.log(training[0].dataValues);
+  if (training[0] !== undefined || training[0] !== null) {
+    // file.pipe(res);
+  } else return next(new AppError("No Training Found", 404));
 };
+
+exports.getTrainings = async (req, res, next) => {
+  // get companies
+  let companies = await Company.findAll({
+    attributes: ["id", "companyName"],
+    raw: true,
+  });
+  console.log("companies: ", companies);
+
+  // get trainings
+  let trainingResult = await Training.findAll({
+    attributes: ["uuid", "trainingDate", "companyId"],
+    raw: true,
+  });
+
+  // adding company name field to each training
+  trainingResult.forEach((training, idx) => {
+    companies.find((entry, idex) => {
+      // find company with specified training id
+      if (entry["id"] === training["companyId"]) {
+        // set response obj with company from find function
+        trainingResult[idx]["companyName"] = entry["companyName"];
+        delete training.companyId;
+      }
+    });
+  });
+
+  res.send(trainingResult);
+};
+
+exports.initialLoad = async (req, res, next) => {};

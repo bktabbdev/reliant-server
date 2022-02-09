@@ -9,6 +9,11 @@ sequelize
   // .sync({ force: true })
   .then(() => {
     console.log("SYNC SUCCESSFUL");
+    process.on("uncaughtException", (err) => {
+      console.log(err);
+      console.log("server.js UNCAUGHT EXCEPTION");
+      // process.exit(1);
+    });
     app.listen(port, () => {
       console.log(`Listening on port ${port}...`);
     });

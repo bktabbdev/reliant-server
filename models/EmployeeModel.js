@@ -25,9 +25,6 @@ const Employee = sequelize.define("employee", {
   companyName: {
     type: DataTypes.STRING,
   },
-  aerialLift: {
-    type: DataTypes.DATE,
-  },
   covid: {
     type: DataTypes.DATE,
   },
